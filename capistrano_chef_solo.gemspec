@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = CapistranoChefSolo::VERSION
   s.authors     = ["iain"]
   s.email       = ["iain@iain.nl"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/iain/capistrano_chef_solo"
   s.summary     = %q{Combining the awesome powers of Capistrano and chef-solo}
   s.description = %q{This gem provides Capistrano tasks to run chef-solo with Capistrano, with hardly any configuration needed.}
 
