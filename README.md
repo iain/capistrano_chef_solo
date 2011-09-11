@@ -46,6 +46,7 @@ a simple VM first.
 ## Todo
 
 * Support roles in both Capistrano and Chef.
+* Support remote cookbooks
 
 ## Tips
 
