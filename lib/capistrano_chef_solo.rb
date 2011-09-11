@@ -111,7 +111,7 @@ Capistrano::Configuration.instance(:must_exist).load do
     task :default, :except => { :no_release => true } do
       unless installed?("chef-solo")
         logger.info "Bootstrapping host to install chef-solo"
-        install
+        install.default
       end
     end
 
