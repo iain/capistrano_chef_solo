@@ -256,6 +256,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       if run_list.empty?
         abort "Please specify a run list, before('deploy') { chef.solo('recipe[foo]', 'recipe[bar]') }"
       end
+      ensure_cookbooks
       default
       deploy.setup
       run "mkdir -p /tmp/chef"
@@ -265,14 +266,18 @@ Capistrano::Configuration.instance(:must_exist).load do
       stream_or_run "#{sudo} chef-solo -c /tmp/chef/solo.rb -j /tmp/chef/solo.json"
     end
 
-    def cookbooks
-      fetch :cookbooks do
-        [ "config/cookbooks", "vendor/cookbooks" ].select { |path| File.exist?(path) }
+    def ensure_cookbooks
+      if cookbooks.empty?
+        abort "Please put some cookbooks in `config/cookbooks` or `vendor/cookbooks` or set :cookbooks to a path where the cookbooks are located"
       end
     end
 
+    def cookbooks
+      Array(fetch(:cookbooks) { [ "config/cookbooks", "vendor/cookbooks" ].select { |path| File.exist?(path) } })
+    end
+
     def generate_config
-      cookbook_paths = Array(cookbooks).map { |c| "File.join(root, #{c.to_s.inspect})" }.join(', ')
+      cookbook_paths = cookbooks.map { |c| "File.join(root, #{c.to_s.inspect})" }.join(', ')
       solo_rb = <<-RUBY
         root = File.absolute_path(File.dirname(__FILE__))
         file_cache_path File.join(root, "cache")
@@ -304,7 +309,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       tar_file = Tempfile.new("cookbooks.tar")
       begin
         tar_file.close
-        system "tar -cjf #{tar_file.path} #{Array(cookbooks).join(' ')}"
+        system "tar -cjf #{tar_file.path} #{cookbooks.join(' ')}"
         upload tar_file.path, "/tmp/chef/cookbooks.tar", :via => :scp
         run "cd /tmp/chef && tar -xjf cookbooks.tar"
       ensure
