@@ -258,7 +258,6 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
       ensure_cookbooks
       default
-      deploy.setup
       run "mkdir -p /tmp/chef"
       generate_config
       generate_attributes(run_list)
