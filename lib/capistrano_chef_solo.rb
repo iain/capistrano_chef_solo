@@ -247,7 +247,9 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       desc "Install the gems needed for chef-solo"
       task :chef, :except => { :no_release => true } do
-        run "#{sudo} gem install chef ruby-shadow --no-ri --no-rdoc"
+        chef_version = fetch :chef_version, ">= 0"
+        run "#{sudo} gem install chef --version '#{chef_version}' --no-ri --no-rdoc"
+        run "#{sudo} gem install ruby-shadow --no-ri --no-rdoc"
       end
 
     end
@@ -258,7 +260,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
       ensure_cookbooks
       default
-      run "mkdir -p /tmp/chef"
+      run "mkdir -p /tmp/chef/cache"
       generate_config
       generate_attributes(run_list)
       copy_cookbooks
