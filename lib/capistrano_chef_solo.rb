@@ -260,7 +260,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
       ensure_cookbooks
       default
-      run "mkdir -p /tmp/chef"
+      run "mkdir -p /tmp/chef/cache"
       generate_config
       generate_attributes(run_list)
       copy_cookbooks
