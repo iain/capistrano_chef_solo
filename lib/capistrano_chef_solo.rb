@@ -310,7 +310,8 @@ Capistrano::Configuration.instance(:must_exist).load do
       tar_file = Tempfile.new("cookbooks.tar")
       begin
         tar_file.close
-        system "tar -cjf #{tar_file.path} #{cookbooks.join(' ')}"
+        env_vars = RUBY_PLATFORM.downcase.include?('darwin') ? "COPYFILE_DISABLE=true" : ""
+        system "#{env_vars} tar -cjf #{tar_file.path} #{cookbooks.join(' ')}"
         upload tar_file.path, "/tmp/chef/cookbooks.tar", :via => :scp
         run "cd /tmp/chef && tar -xjf cookbooks.tar"
       ensure
