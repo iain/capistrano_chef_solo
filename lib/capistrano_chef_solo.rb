@@ -138,16 +138,29 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       desc "Performs a dist-upgrade on your system"
       task :dist_upgrade, :except => { :no_release => true } do
-        stream_or_run "#{sudo} aptitude update"
-        stream_or_run "#{sudo} apt-get -o Dpkg::Options::=\"--force-confnew\" --force-yes -fuy dist-upgrade"
+        case os
+        when "ubuntu"
+          stream_or_run "#{sudo} aptitude update"
+          stream_or_run "#{sudo} apt-get -o Dpkg::Options::=\"--force-confnew\" --force-yes -fuy dist-upgrade"
+        when "centos"
+          stream_or_run "#{sudo} yum update -y"
+        end
       end
 
       desc "Installs the dependencies to compile Ruby"
       task :dependencies, :except => { :no_release => true } do
-        stream_or_run "#{sudo} aptitude install -y git-core curl build-essential bison openssl \
-              libreadline6 libreadline6-dev git-core zlib1g zlib1g-dev libssl-dev \
-              libyaml-dev libxml2-dev libxslt-dev autoconf libc6-dev ncurses-dev \
-              vim wget tree" # this line not really dependencies, but who can live without them?
+        case os
+        when "ubuntu"
+          stream_or_run "#{sudo} aptitude install -y git-core curl build-essential bison openssl \
+                libreadline6 libreadline6-dev zlib1g zlib1g-dev libssl-dev \
+                libyaml-dev libxml2-dev libxslt-dev autoconf libc6-dev ncurses-dev \
+                vim wget tree" # this line not really dependencies, but who can live without them?
+        when "centos"
+          stream_or_run "#{sudo} yum install -y git-core curl bison openssl \
+                readline readline-devel zlib zlib-devel openssl-devel \
+                libyaml-devel libxml2-devel libxslt-devel autoconf glibc-devel ncurses-devel \
+                vim wget tree" # this line not really dependencies, but who can live without them?
+        end
       end
 
       desc <<-DESC
@@ -248,8 +261,8 @@ Capistrano::Configuration.instance(:must_exist).load do
       desc "Install the gems needed for chef-solo"
       task :chef, :except => { :no_release => true } do
         chef_version = fetch :chef_version, ">= 0"
-        run "#{sudo} gem install chef --version '#{chef_version}' --no-ri --no-rdoc"
-        run "#{sudo} gem install ruby-shadow --no-ri --no-rdoc"
+        run "#{sudo} #{sudo_opts} gem install chef --version '#{chef_version}' --no-ri --no-rdoc"
+        run "#{sudo} #{sudo_opts} gem install ruby-shadow --no-ri --no-rdoc"
       end
 
     end
@@ -264,7 +277,18 @@ Capistrano::Configuration.instance(:must_exist).load do
       generate_config
       generate_attributes(run_list)
       copy_cookbooks
-      stream_or_run "#{sudo} chef-solo -c /tmp/chef/solo.rb -j /tmp/chef/solo.json"
+      stream_or_run "#{sudo} #{sudo_opts} chef-solo -c /tmp/chef/solo.rb -j /tmp/chef/solo.json"
+    end
+
+    def sudo_opts
+      case os
+      when "centos"
+        "env PATH=$PATH" # to fix missing paths when using sudo
+      end
+    end
+
+    def os
+      fetch(:os, "ubuntu")
     end
 
     def ensure_cookbooks
@@ -310,7 +334,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       tar_file = Tempfile.new("cookbooks.tar")
       begin
         tar_file.close
-        env_vars = RUBY_PLATFORM.downcase.include?('darwin') ? "COPYFILE_DISABLE=true" : ""
+        env_vars = fetch(:copyfile_disable, false) && RUBY_PLATFORM.downcase.include?('darwin') ? "COPYFILE_DISABLE=true" : ""
         system "#{env_vars} tar -cjf #{tar_file.path} #{cookbooks.join(' ')}"
         upload tar_file.path, "/tmp/chef/cookbooks.tar", :via => :scp
         run "cd /tmp/chef && tar -xjf cookbooks.tar"
