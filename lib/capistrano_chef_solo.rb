@@ -156,7 +156,7 @@ Capistrano::Configuration.instance(:must_exist).load do
                 libyaml-dev libxml2-dev libxslt-dev autoconf libc6-dev ncurses-dev \
                 vim wget tree" # this line not really dependencies, but who can live without them?
         when "centos"
-          stream_or_run "#{sudo} yum install -y git-core curl bison openssl \
+          stream_or_run "#{sudo} yum install -y git-core curl patch bison openssl \
                 readline readline-devel zlib zlib-devel openssl-devel \
                 libyaml-devel libxml2-devel libxslt-devel autoconf glibc-devel ncurses-devel \
                 vim wget tree" # this line not really dependencies, but who can live without them?
