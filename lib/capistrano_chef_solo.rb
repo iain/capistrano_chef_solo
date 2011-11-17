@@ -164,6 +164,26 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
 
       desc <<-DESC
+        Installs Ruby using ruby-build by default.
+
+        You can set the version by setting :ruby_version. For example:
+
+        set :ruby_version, "ree-1.8.7-2011.03"
+
+        If you are using Ruby 1.9.2, and want to have some speed improvements, \
+        capistrano_chef_solo also provides a patched Ruby compiled from source. \
+        To use this, set :use_ruby_build, false. See the the documentation of \
+        chef:install:ruby_from_source for more information.
+      DESC
+      task :ruby, :except => { :no_release => true } do
+        if fetch :use_ruby_build, true
+          ruby_build
+        else
+          ruby_from_source
+        end
+      end
+
+      desc <<-DESC
         Compiles Ruby from source and applies 1.9.2 patches to speed it up.
 
         This usually gives a lot of output, so most of the compiling output is saved \
@@ -208,7 +228,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         See more on GC tuning here:
         http://www.rubyenterpriseedition.com/documentation.html#_garbage_collector_performance_tuning
       DESC
-      task :ruby, :except => { :no_release => true } do
+      task :ruby_from_source, :except => { :no_release => true } do
         ruby_version = fetch :ruby_version, "ruby-1.9.2-p290"
         ruby_url     = fetch :ruby_url, "http://ftp.ruby-lang.org/pub/ruby/1.9/#{ruby_version}.tar.gz"
         ruby_dir     = fetch :ruby_dir, ruby_version
@@ -263,6 +283,21 @@ Capistrano::Configuration.instance(:must_exist).load do
         chef_version = fetch :chef_version, ">= 0"
         run "#{sudo} #{sudo_opts} gem install chef --version '#{chef_version}' --no-ri --no-rdoc"
         run "#{sudo} #{sudo_opts} gem install ruby-shadow --no-ri --no-rdoc"
+      end
+
+      desc "Installs ruby with ruby-build. Use :ruby_version to specify a version."
+      task :ruby_build, :except => { :no_release => true } do
+        version = fetch(:ruby_version) { "1.9.3-p0" }
+        script = <<-BASH
+          set -e
+          cd /tmp
+          test -d ruby-build || git clone git://github.com/sstephenson/ruby-build.git
+          cd ruby-build
+          #{sudo} #{sudo_opts} ./install.sh
+          #{sudo} #{sudo_opts} ruby-build #{version} /usr/local/
+        BASH
+        put script, "/tmp/install-ruby-build.sh", :via => :scp
+        run "bash /tmp/install-ruby-build.sh > /tmp/install-ruby-build.log"
       end
 
     end
