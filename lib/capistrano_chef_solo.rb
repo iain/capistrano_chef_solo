@@ -304,7 +304,7 @@ Capistrano::Configuration.instance(:must_exist).load do
     def generate_config
       cookbook_paths = cookbooks.map { |c| "File.join(root, #{c.to_s.inspect})" }.join(', ')
       solo_rb = <<-RUBY
-        root = File.absolute_path(File.dirname(__FILE__))
+        root = File.expand_path(File.dirname(__FILE__))
         file_cache_path File.join(root, "cache")
         cookbook_path [ #{cookbook_paths} ]
       RUBY
